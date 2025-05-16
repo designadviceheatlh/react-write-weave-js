@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Toolbar from './Toolbar';
 import { cn } from '@/lib/utils';
@@ -60,12 +61,12 @@ const TextEditor = ({
       
       <div className="relative min-h-[150px]">
         {isEmpty && !isFocused && (
-          <div className="absolute top-0 left-0 p-3 text-gray-400 pointer-events-none">
+          <div className="absolute top-0 left-0 p-3 text-gray-400 pointer-events-none font-sans">
             {placeholder}
           </div>
         )}
         <div
-          className="p-3 min-h-[150px] focus:outline-none prose prose-sm max-w-none w-full"
+          className="p-3 min-h-[150px] focus:outline-none prose prose-sm max-w-none w-full font-sans text-[14px] font-normal leading-normal"
           ref={editorRef}
           contentEditable
           onInput={handleChange}
