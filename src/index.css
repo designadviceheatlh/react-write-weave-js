@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -97,5 +98,13 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* ContentEditable placeholder styling */
+  [contenteditable]:empty:before {
+    content: attr(data-placeholder);
+    color: #94a3b8;
+    pointer-events: none;
+    position: absolute;
   }
 }
