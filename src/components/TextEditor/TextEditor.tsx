@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Toolbar from './Toolbar';
 import { cn } from '@/lib/utils';
 
@@ -22,12 +22,16 @@ const TextEditor = ({
 }: TextEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [isEmpty, setIsEmpty] = useState(!initialValue);
 
   const handleChange = useCallback(() => {
     if (!editorRef.current || !onChange) return;
     
     const content = editorRef.current.textContent || '';
     const html = editorRef.current.innerHTML;
+    
+    // Check if editor is empty to show/hide placeholder
+    setIsEmpty(content === '');
     
     onChange({ content, html });
   }, [onChange]);
@@ -42,24 +46,34 @@ const TextEditor = ({
     }
   }, [handleChange]);
 
+  // Initialize with content
+  useEffect(() => {
+    if (initialValue && editorRef.current) {
+      editorRef.current.innerHTML = initialValue;
+      setIsEmpty(false);
+    }
+  }, [initialValue]);
+
   return (
     <div className={cn("flex flex-col border rounded-md overflow-hidden", className)}>
       <Toolbar executeCommand={executeCommand} />
       
-      <div
-        className="p-3 min-h-[150px] focus:outline-none prose prose-sm max-w-none"
-        ref={editorRef}
-        contentEditable
-        dangerouslySetInnerHTML={{ __html: initialValue }}
-        onInput={handleChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        placeholder={placeholder}
-        data-placeholder={placeholder}
-        style={{
-          position: 'relative',
-        }}
-      />
+      <div className="relative min-h-[150px]">
+        {isEmpty && !isFocused && (
+          <div className="absolute top-0 left-0 p-3 text-gray-400 pointer-events-none">
+            {placeholder}
+          </div>
+        )}
+        <div
+          className="p-3 min-h-[150px] focus:outline-none prose prose-sm max-w-none w-full"
+          ref={editorRef}
+          contentEditable
+          onInput={handleChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          data-testid="text-editor"
+        />
+      </div>
     </div>
   );
 };
