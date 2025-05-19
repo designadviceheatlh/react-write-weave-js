@@ -11,30 +11,13 @@ import {
   ListOrdered 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { handleBold } from './utils/editorCommands';
 
 interface ToolbarProps {
   executeCommand: (command: string, value?: string | null) => void;
 }
 
 const Toolbar = ({ executeCommand }: ToolbarProps) => {
-  // Custom handler for bold to ensure we use font-weight: 600
-  const handleBold = () => {
-    // First apply the standard bold command
-    executeCommand('bold');
-    
-    // Then ensure all <b> and <strong> elements use font-weight: 600
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const strongElements = document.querySelectorAll('b, strong');
-      strongElements.forEach(el => {
-        if (range.intersectsNode(el)) {
-          (el as HTMLElement).style.fontWeight = '600';
-        }
-      });
-    }
-  };
-
   return (
     <div className="flex items-center p-2 bg-white border-b">
       {/* Text style dropdown */}
@@ -56,7 +39,7 @@ const Toolbar = ({ executeCommand }: ToolbarProps) => {
         <Button 
           variant="ghost" 
           size="icon"
-          onClick={handleBold}
+          onClick={() => handleBold(() => executeCommand('bold'))}
           className="h-8 w-8"
         >
           <Bold size={18} />
