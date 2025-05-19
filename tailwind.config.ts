@@ -121,6 +121,12 @@ export default {
 							fontWeight: 500,
 							lineHeight: 'normal',
 						},
+						strong: {
+							fontWeight: 600,
+						},
+						b: {
+							fontWeight: 600,
+						},
 						ul: {
 							listStyleType: 'disc',
 							paddingLeft: '1.5rem',
@@ -134,6 +140,18 @@ export default {
 							fontSize: '14px',
 							fontWeight: 400,
 							lineHeight: 'normal',
+						},
+						table: {
+							borderCollapse: 'collapse',
+							width: '100%',
+						},
+						td: {
+							borderWidth: '1px',
+							padding: '8px',
+						},
+						th: {
+							borderWidth: '1px',
+							padding: '8px',
 						},
 					}
 				}
