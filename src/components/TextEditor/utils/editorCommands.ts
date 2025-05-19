@@ -15,6 +15,20 @@ export const executeCommand = (
 };
 
 /**
+ * Handles undo operation
+ */
+export const handleUndo = (handleChange?: () => void): void => {
+  executeCommand('undo', null, handleChange);
+};
+
+/**
+ * Handles redo operation
+ */
+export const handleRedo = (handleChange?: () => void): void => {
+  executeCommand('redo', null, handleChange);
+};
+
+/**
  * Applies bold with font-weight: 600 to selected text
  */
 export const handleBold = (handleChange?: () => void): void => {

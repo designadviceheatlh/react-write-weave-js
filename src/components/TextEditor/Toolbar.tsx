@@ -8,10 +8,26 @@ import {
   AlignCenter, 
   AlignRight, 
   List, 
-  ListOrdered 
+  ListOrdered,
+  Undo,
+  Redo,
+  Type
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { handleBold } from './utils/editorCommands';
+import { handleBold, handleUndo, handleRedo } from './utils/editorCommands';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  applyTextTransformation, 
+  transformToUppercase, 
+  transformToLowercase, 
+  capitalizeWords, 
+  capitalizeSentence 
+} from './utils/textTransformations';
 
 interface ToolbarProps {
   executeCommand: (command: string, value?: string | null) => void;
@@ -32,6 +48,28 @@ const Toolbar = ({ executeCommand }: ToolbarProps) => {
           <option value="h2">Título 2</option>
           <option value="h3">Título 3</option>
         </select>
+      </div>
+
+      {/* Undo/Redo */}
+      <div className="flex space-x-1 border-r pr-2 mr-2">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={() => handleUndo(() => executeCommand('undo'))}
+          className="h-8 w-8"
+          title="Desfazer (Ctrl+Z)"
+        >
+          <Undo size={18} />
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={() => handleRedo(() => executeCommand('redo'))}
+          className="h-8 w-8"
+          title="Refazer (Ctrl+Y)"
+        >
+          <Redo size={18} />
+        </Button>
       </div>
 
       {/* Text formatting */}
@@ -60,6 +98,34 @@ const Toolbar = ({ executeCommand }: ToolbarProps) => {
         >
           <Underline size={18} />
         </Button>
+        
+        {/* Text transformation dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="h-8 w-8"
+              title="Transformar texto"
+            >
+              <Type size={18} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="bg-white">
+            <DropdownMenuItem onClick={() => applyTextTransformation(transformToUppercase, () => executeCommand(''))}>
+              MAIÚSCULAS
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => applyTextTransformation(transformToLowercase, () => executeCommand(''))}>
+              minúsculas
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => applyTextTransformation(capitalizeWords, () => executeCommand(''))}>
+              Primeira Letra Maiúscula
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => applyTextTransformation(capitalizeSentence, () => executeCommand(''))}>
+              Primeira letra da frase
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Text alignment */}

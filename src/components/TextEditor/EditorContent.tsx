@@ -1,6 +1,7 @@
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { handlePaste } from './utils/pasteHandler';
+import { handleUndo, handleRedo } from './utils/editorCommands';
 
 interface EditorContentProps {
   initialValue: string;
@@ -23,6 +24,20 @@ const EditorContent: React.FC<EditorContentProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
 
+  // Handle keyboard shortcuts
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // Ctrl+Z for undo
+    if (e.ctrlKey && e.key === 'z') {
+      e.preventDefault();
+      handleUndo(onChange);
+    }
+    // Ctrl+Y or Ctrl+Shift+Z for redo
+    if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
+      e.preventDefault();
+      handleRedo(onChange);
+    }
+  }, [onChange]);
+
   return (
     <div className="relative min-h-[150px]">
       {isEmpty && !isFocused && (
@@ -41,6 +56,7 @@ const EditorContent: React.FC<EditorContentProps> = ({
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         onPaste={(e) => handlePaste(e, onChange)}
+        onKeyDown={handleKeyDown}
         data-testid="text-editor"
         dangerouslySetInnerHTML={{ __html: initialValue }}
       />
