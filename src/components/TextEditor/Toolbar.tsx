@@ -29,7 +29,7 @@ const Toolbar = ({ executeCommand }: ToolbarProps) => {
       const strongElements = document.querySelectorAll('b, strong');
       strongElements.forEach(el => {
         if (range.intersectsNode(el)) {
-          el.style.fontWeight = '600';
+          (el as HTMLElement).style.fontWeight = '600';
         }
       });
     }

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Toolbar from './Toolbar';
 import { cn } from '@/lib/utils';
@@ -238,13 +239,13 @@ const TextEditor = ({
         const spans = tempDiv.querySelectorAll('span, font');
         spans.forEach(el => {
           // Get inline styles or attributes
-          const style = window.getComputedStyle(el);
-          const fontSize = parseInt(el.style.fontSize || '0');
-          const fontWeight = el.style.fontWeight || '';
+          const computedStyle = window.getComputedStyle(el as HTMLElement);
+          const fontSize = parseInt((el as HTMLElement).style.fontSize || '0');
+          const fontWeight = (el as HTMLElement).style.fontWeight || '';
           const isStrong = 
             fontWeight === 'bold' || 
             parseInt(fontWeight) >= 600 || 
-            el.style.fontFamily?.toLowerCase().includes('bold') ||
+            (el as HTMLElement).style.fontFamily?.toLowerCase().includes('bold') ||
             el.innerHTML.trim().toUpperCase() === el.innerHTML.trim();
           
           if (isStrong) {
@@ -255,11 +256,11 @@ const TextEditor = ({
           }
           
           // Convert large text to headings
-          if (fontSize >= 20 || el.style.fontSize?.includes('xx-large') || el.style.fontSize?.includes('x-large')) {
+          if (fontSize >= 20 || (el as HTMLElement).style.fontSize?.includes('xx-large') || (el as HTMLElement).style.fontSize?.includes('x-large')) {
             const h1 = document.createElement('h1');
             h1.innerHTML = el.innerHTML;
             el.parentNode?.replaceChild(h1, el);
-          } else if (fontSize >= 16 || el.style.fontSize?.includes('large')) {
+          } else if (fontSize >= 16 || (el as HTMLElement).style.fontSize?.includes('large')) {
             const h2 = document.createElement('h2');
             h2.innerHTML = el.innerHTML;
             el.parentNode?.replaceChild(h2, el);
