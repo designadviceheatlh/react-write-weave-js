@@ -21,10 +21,15 @@ export const handlePaste = (
   
   if (html) {
     processedContent = cleanPastedHTML(html);
+    console.log('Processed HTML content:', processedContent);
   } else if (text) {
     // For plain text, try to detect structure and convert to HTML
     processedContent = processPlainText(text);
+    console.log('Processed plain text content:', processedContent);
   }
+  
+  // Get insertion context to check if we're inside a list
+  const inListContext = checkIfInListContext();
   
   // Insert the processed content at cursor position
   const selection = window.getSelection();
@@ -56,4 +61,40 @@ export const handlePaste = (
   
   // Trigger change handler
   handleChange();
+};
+
+/**
+ * Checks if the cursor is currently positioned inside a list element
+ */
+const checkIfInListContext = (): { inList: boolean, listType: string | null } => {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) {
+    return { inList: false, listType: null };
+  }
+  
+  let node = selection.getRangeAt(0).startContainer;
+  
+  // If we're in a text node, get its parent
+  if (node.nodeType === Node.TEXT_NODE) {
+    node = node.parentNode;
+  }
+  
+  // Check if we're inside a list element
+  let parentElement = node as HTMLElement;
+  while (parentElement) {
+    if (parentElement.tagName === 'LI') {
+      const listParent = parentElement.parentElement;
+      return { 
+        inList: true, 
+        listType: listParent?.tagName.toLowerCase() || null 
+      };
+    }
+    
+    if (parentElement.tagName === 'BODY' || !parentElement.parentElement) {
+      break;
+    }
+    parentElement = parentElement.parentElement;
+  }
+  
+  return { inList: false, listType: null };
 };
