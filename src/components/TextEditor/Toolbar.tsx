@@ -21,6 +21,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   applyTextTransformation, 
   transformToUppercase, 
@@ -36,18 +43,22 @@ interface ToolbarProps {
 const Toolbar = ({ executeCommand }: ToolbarProps) => {
   return (
     <div className="flex items-center p-2 bg-white border-b">
-      {/* Text style dropdown */}
+      {/* Text style dropdown using Radix UI Select */}
       <div className="mr-2">
-        <select 
-          onChange={(e) => executeCommand('formatBlock', e.target.value)}
-          className="h-9 px-2 border rounded-md text-sm"
+        <Select 
           defaultValue="p"
+          onValueChange={(value) => executeCommand('formatBlock', value)}
         >
-          <option value="p">Texto Normal</option>
-          <option value="h1">Título 1</option>
-          <option value="h2">Título 2</option>
-          <option value="h3">Título 3</option>
-        </select>
+          <SelectTrigger className="h-9 w-[140px] text-sm border rounded-md">
+            <SelectValue placeholder="Texto Normal" />
+          </SelectTrigger>
+          <SelectContent className="bg-white">
+            <SelectItem value="p">Texto Normal</SelectItem>
+            <SelectItem value="h1">Título 1</SelectItem>
+            <SelectItem value="h2">Título 2</SelectItem>
+            <SelectItem value="h3">Título 3</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Undo/Redo */}
