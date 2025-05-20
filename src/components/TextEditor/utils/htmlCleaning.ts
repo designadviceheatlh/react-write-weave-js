@@ -1,4 +1,3 @@
-
 import { detectContentSource } from './contentProcessing';
 
 /**
@@ -270,7 +269,7 @@ const processNestedLists = (container: HTMLElement): void => {
   const listItems = container.querySelectorAll('li');
   
   // Map to store items by their indentation level
-  const indentationMap = new Map();
+  const indentationMap = new Map<number, HTMLElement[]>();
   
   listItems.forEach(item => {
     // Try to determine indentation level from various sources
@@ -285,7 +284,10 @@ const processNestedLists = (container: HTMLElement): void => {
     if (!indentationMap.has(indentation)) {
       indentationMap.set(indentation, []);
     }
-    indentationMap.get(indentation).push(item);
+    const items = indentationMap.get(indentation);
+    if (items) {
+      items.push(item);
+    }
   });
   
   // Sort indentation levels
@@ -299,12 +301,12 @@ const processNestedLists = (container: HTMLElement): void => {
       const parentLevel = sortedLevels[i - 1];
       
       // Get items at current level
-      const currentItems = indentationMap.get(currentLevel);
+      const currentItems = indentationMap.get(currentLevel) || [];
       
       currentItems.forEach(item => {
         // Find closest previous item with parent level
-        const parentItems = indentationMap.get(parentLevel);
-        let closestParent = null;
+        const parentItems = indentationMap.get(parentLevel) || [];
+        let closestParent: HTMLElement | null = null;
         
         for (let j = 0; j < parentItems.length; j++) {
           if (parentItems[j].compareDocumentPosition(item) & Node.DOCUMENT_POSITION_FOLLOWING) {
@@ -316,17 +318,20 @@ const processNestedLists = (container: HTMLElement): void => {
           // Check if parent already has a sublist
           let sublist = Array.from(closestParent.children).find(
             child => child.tagName === 'UL' || child.tagName === 'OL'
-          );
+          ) as HTMLElement | undefined;
           
           if (!sublist) {
             // Create new sublist based on current item's list type
-            const listType = item.parentElement?.tagName === 'OL' ? 'ol' : 'ul';
-            sublist = document.createElement(listType);
+            const parentElement = item.parentElement;
+            const listType = parentElement && (parentElement.tagName === 'OL' ? 'ol' : 'ul');
+            sublist = document.createElement(listType || 'ul');
             closestParent.appendChild(sublist);
           }
           
           // Move item to sublist
-          sublist.appendChild(item);
+          if (sublist) {
+            sublist.appendChild(item);
+          }
         }
       });
     }
