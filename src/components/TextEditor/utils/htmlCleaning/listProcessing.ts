@@ -101,83 +101,200 @@ export const detectAndConvertDivLists = (container: HTMLElement): void => {
 };
 
 /**
- * Process nested list structures
+ * Process nested list structures with improved hierarchy detection
+ * between numbered lists and bullet points
  */
 export const processNestedLists = (container: HTMLElement): void => {
-  // Look for indentation patterns that suggest nesting
-  const listItems = container.querySelectorAll('li');
+  // Get all list items and immediate parents to understand hierarchy
+  const listContainers = container.querySelectorAll('ul, ol');
+  const listItems = Array.from(container.querySelectorAll('li'));
   
-  // Map to store items by their indentation level
-  const indentationMap = new Map<number, HTMLElement[]>();
+  // First pass: Analyze and mark list item levels based on indentation and context
+  const itemLevelMap = new Map<HTMLElement, number>();
+  const itemTypeMap = new Map<HTMLElement, string>();
   
+  // Determine the nesting level and type for each list item
   listItems.forEach(item => {
-    // Try to determine indentation level from various sources
+    const parent = item.parentElement;
+    if (!parent) return;
+    
+    // Store the list type (ul or ol) for each item
+    itemTypeMap.set(item as HTMLElement, parent.tagName.toLowerCase());
+    
+    // Calculate level based on indentation and/or position in document
     const computedStyle = window.getComputedStyle(item);
     const marginLeft = parseInt(computedStyle.marginLeft || '0');
     const paddingLeft = parseInt(computedStyle.paddingLeft || '0');
-    
-    // Simplified: use margin+padding as indentation indicator
     const indentation = marginLeft + paddingLeft;
     
-    // Store in map
-    if (!indentationMap.has(indentation)) {
-      indentationMap.set(indentation, []);
-    }
-    const items = indentationMap.get(indentation);
-    if (items) {
-      items.push(item as HTMLElement);
+    // Check for explicit level markers in text (e.g., 1.1, 2.3, etc.)
+    const content = item.textContent || '';
+    const levelFromContent = detectLevelFromContent(content);
+    
+    // Use the higher of the calculated indentation level or content-implied level
+    const level = Math.max(
+      Math.floor(indentation / 20) + 1, // Estimate from CSS
+      levelFromContent
+    );
+    
+    itemLevelMap.set(item as HTMLElement, level);
+  });
+  
+  // Second pass: Reorganize nested lists based on detected hierarchy
+  processListHierarchy(listItems, itemLevelMap, itemTypeMap);
+  
+  // Find misplaced lists - lists that should be in an li but aren't
+  container.querySelectorAll('ul > ul, ul > ol, ol > ul, ol > ol').forEach(list => {
+    const parent = list.parentElement;
+    if (parent && (parent.tagName === 'UL' || parent.tagName === 'OL')) {
+      // Create a list item to contain this list
+      const li = document.createElement('li');
+      
+      // Move before the nested list
+      parent.insertBefore(li, list);
+      
+      // Move the list inside the li
+      li.appendChild(list);
     }
   });
   
-  // Sort indentation levels
-  const sortedLevels = Array.from(indentationMap.keys()).sort((a, b) => a - b);
+  // Detect correlation between numbered lists and bullet points
+  correlateNumberedAndBulletLists(container);
+};
+
+/**
+ * Detects level from list item content (e.g., 1.1, 1.1.2)
+ */
+function detectLevelFromContent(content: string): number {
+  // Check for numbered patterns like 1.2.3 or 1.1
+  const hierarchicalNumberMatch = content.match(/^(\d+\.)+\d+/);
+  if (hierarchicalNumberMatch) {
+    // Count the number of dots plus 1 for the level
+    const dots = (hierarchicalNumberMatch[0].match(/\./g) || []).length;
+    return dots + 1;
+  }
   
-  // We only need to process if we have multiple indentation levels
-  if (sortedLevels.length > 1) {
-    // Process from most indented to least
-    for (let i = sortedLevels.length - 1; i > 0; i--) {
-      const currentLevel = sortedLevels[i];
-      const parentLevel = sortedLevels[i - 1];
+  return 1; // Default level
+}
+
+/**
+ * Process list items based on detected hierarchy levels
+ */
+function processListHierarchy(
+  listItems: Element[],
+  itemLevelMap: Map<HTMLElement, number>,
+  itemTypeMap: Map<HTMLElement, string>
+): void {
+  // Sort items by their position in the document for correct processing order
+  const sortedItems = [...listItems].sort((a, b) => {
+    const positionComparison = a.compareDocumentPosition(b);
+    return positionComparison & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+  });
+  
+  // Process items by level
+  for (let level = 5; level > 1; level--) {
+    // Find items at this level
+    const itemsAtLevel = sortedItems.filter(item => 
+      itemLevelMap.get(item as HTMLElement) === level
+    );
+    
+    for (const item of itemsAtLevel) {
+      // Find the closest previous item with a lower level to be the parent
+      let parent: Element | null = null;
+      let closestIndex = -1;
       
-      // Get items at current level
-      const currentItems = indentationMap.get(currentLevel) || [];
-      
-      currentItems.forEach(item => {
-        // Find closest previous item with parent level
-        const parentItems = indentationMap.get(parentLevel) || [];
-        let closestParent: HTMLElement | null = null;
+      for (let i = sortedItems.indexOf(item) - 1; i >= 0; i--) {
+        const potentialParent = sortedItems[i];
+        const parentLevel = itemLevelMap.get(potentialParent as HTMLElement) || 0;
         
-        for (let j = 0; j < parentItems.length; j++) {
-          if (parentItems[j].compareDocumentPosition(item) & Node.DOCUMENT_POSITION_FOLLOWING) {
-            closestParent = parentItems[j];
-          }
+        if (parentLevel < level && parentLevel > 0) {
+          parent = potentialParent;
+          closestIndex = i;
+          break;
+        }
+      }
+      
+      if (parent) {
+        // Get the item's list type
+        const itemType = itemTypeMap.get(item as HTMLElement) || 'ul';
+        
+        // Find or create a nested list in the parent
+        let nestedList = Array.from(parent.children).find(
+          child => child.tagName.toLowerCase() === itemType
+        ) as HTMLElement | undefined;
+        
+        if (!nestedList) {
+          nestedList = document.createElement(itemType);
+          parent.appendChild(nestedList);
         }
         
-        if (closestParent) {
-          // Check if parent already has a sublist
-          let sublist = Array.from(closestParent.children).find(
-            child => child.tagName === 'UL' || child.tagName === 'OL'
-          ) as HTMLElement | undefined;
-          
-          if (!sublist) {
-            // Create new sublist based on current item's list type
-            const parentElement = item.parentElement;
-            if (parentElement) { // Type guard for parentElement
-              const listType = parentElement.tagName === 'OL' ? 'ol' : 'ul';
-              sublist = document.createElement(listType);
-              closestParent.appendChild(sublist);
-            }
-          }
-          
-          // Move item to sublist
-          if (sublist) {
-            sublist.appendChild(item);
-          }
+        // Move this item to the nested list
+        if (nestedList && item.parentElement !== nestedList) {
+          nestedList.appendChild(item);
         }
-      });
+      }
     }
   }
-};
+}
+
+/**
+ * Correlate numbered lists with bullet point sublists for proper nesting
+ */
+function correlateNumberedAndBulletLists(container: HTMLElement): void {
+  // Step 1: Find all top level list items
+  const topLevelItems = Array.from(container.querySelectorAll('body > ul > li, body > ol > li, #root > ul > li, #root > ol > li, div > ul > li, div > ol > li'))
+    .filter(item => !(item.parentElement?.parentElement instanceof HTMLLIElement));
+  
+  // Step 2: Check if immediate siblings have different list types
+  const processedLists = new Set();
+  
+  container.querySelectorAll('ul + ol, ol + ul').forEach(list => {
+    if (processedLists.has(list)) return;
+    
+    const previousSibling = list.previousElementSibling;
+    if (previousSibling && (previousSibling.tagName === 'UL' || previousSibling.tagName === 'OL')) {
+      // These are sibling lists of different types - they might need nesting
+      const prevItems = previousSibling.querySelectorAll('li');
+      if (prevItems.length > 0) {
+        const lastItem = prevItems[prevItems.length - 1];
+        
+        // Move the list as a child of the last item in the previous list
+        lastItem.appendChild(list);
+        
+        processedLists.add(list);
+      }
+    }
+  });
+  
+  // Step 3: Look for indentation patterns that might indicate nesting between list types
+  const allLists = container.querySelectorAll('ul, ol');
+  allLists.forEach(list => {
+    const computedStyle = window.getComputedStyle(list);
+    const marginLeft = parseInt(computedStyle.marginLeft || '0');
+    
+    if (marginLeft > 0) {
+      // This might be a nested list that wasn't properly structured
+      const previousElement = getPreviousElementInFlow(list);
+      
+      if (previousElement instanceof HTMLLIElement) {
+        // Move this list into the previous list item
+        previousElement.appendChild(list);
+      }
+    }
+  });
+}
+
+/**
+ * Get the previous element in the document flow, considering the DOM structure
+ */
+function getPreviousElementInFlow(element: Element): Element | null {
+  if (element.previousElementSibling) {
+    return element.previousElementSibling;
+  } else if (element.parentElement) {
+    return element.parentElement;
+  }
+  return null;
+}
 
 /**
  * Fix list structure issues
