@@ -1,49 +1,6 @@
 
 /**
- * Executes a document command in the content editable area
+ * This file has been refactored into smaller modules.
+ * Import from './editorCommands/index.ts' instead.
  */
-export const executeCommand = (
-  command: string, 
-  value: string | null = null,
-  handleChange?: () => void
-): void => {
-  document.execCommand(command, false, value);
-  
-  if (handleChange) {
-    handleChange();
-  }
-};
-
-/**
- * Handles undo operation
- */
-export const handleUndo = (handleChange?: () => void): void => {
-  executeCommand('undo', null, handleChange);
-};
-
-/**
- * Handles redo operation
- */
-export const handleRedo = (handleChange?: () => void): void => {
-  executeCommand('redo', null, handleChange);
-};
-
-/**
- * Applies bold with font-weight: 600 to selected text
- */
-export const handleBold = (handleChange?: () => void): void => {
-  // First apply the standard bold command
-  executeCommand('bold', null, handleChange);
-  
-  // Then ensure all <b> and <strong> elements use font-weight: 600
-  const selection = window.getSelection();
-  if (selection && selection.rangeCount > 0) {
-    const range = selection.getRangeAt(0);
-    const strongElements = document.querySelectorAll('b, strong');
-    strongElements.forEach(el => {
-      if (range.intersectsNode(el)) {
-        (el as HTMLElement).style.fontWeight = '600';
-      }
-    });
-  }
-};
+export { executeCommand, handleUndo, handleRedo, handleBold } from './editorCommands/index';
