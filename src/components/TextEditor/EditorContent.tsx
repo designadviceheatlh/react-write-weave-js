@@ -1,6 +1,6 @@
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { handlePaste } from './utils/pasteHandler';
+import { handlePaste } from './utils/pasteHandling';
 import { handleUndo, handleRedo } from './utils/editorCommands';
 
 interface EditorContentProps {
