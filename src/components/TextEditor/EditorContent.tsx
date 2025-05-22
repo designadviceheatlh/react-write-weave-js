@@ -2,6 +2,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { handlePaste } from './utils/pasteHandling';
 import { handleUndo, handleRedo } from './utils/editorCommands';
+import { handleListIndentation } from './utils/editorCommands/insertCommands';
 
 interface EditorContentProps {
   initialValue: string;
@@ -35,6 +36,14 @@ const EditorContent: React.FC<EditorContentProps> = ({
     if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
       e.preventDefault();
       handleRedo(onChange);
+    }
+    
+    // Handle Tab key for list indentation
+    if (e.key === 'Tab') {
+      const isListIndented = handleListIndentation(e.shiftKey, onChange);
+      if (isListIndented) {
+        e.preventDefault(); // Prevent default tab behavior only if we handled a list indentation
+      }
     }
   }, [onChange]);
 

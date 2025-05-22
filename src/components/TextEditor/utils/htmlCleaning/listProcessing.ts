@@ -1,4 +1,3 @@
-
 import { convertElementSequenceToList, convertMsoListToProperList } from './listConverters';
 
 /**
@@ -158,7 +157,7 @@ export const processNestedLists = (container: HTMLElement): void => {
     }
   });
   
-  // Detect correlation between numbered lists and bullet points
+  // Enhance mixed list detection with bidirectional nesting support
   correlateNumberedAndBulletLists(container);
 };
 
@@ -219,11 +218,13 @@ function processListHierarchy(
         const itemType = itemTypeMap.get(item as HTMLElement) || 'ul';
         
         // Find or create a nested list in the parent
+        // Allow mixing of list types - use the item's list type, not necessarily the parent's
         let nestedList = Array.from(parent.children).find(
           child => child.tagName.toLowerCase() === itemType
         ) as HTMLElement | undefined;
         
         if (!nestedList) {
+          // Create a new list with the same type as the item's parent list
           nestedList = document.createElement(itemType);
           parent.appendChild(nestedList);
         }
@@ -239,6 +240,7 @@ function processListHierarchy(
 
 /**
  * Correlate numbered lists with bullet point sublists for proper nesting
+ * Enhanced for bidirectional nesting support
  */
 function correlateNumberedAndBulletLists(container: HTMLElement): void {
   // Step 1: Find all top level list items
@@ -282,6 +284,37 @@ function correlateNumberedAndBulletLists(container: HTMLElement): void {
       }
     }
   });
+  
+  // Step 4: Ensure proper mixing of list types in nested structures
+  // Find list items with no content but that contain a list of a different type
+  container.querySelectorAll('li').forEach(item => {
+    if (!item.textContent?.trim()) return;
+    
+    const childLists = Array.from(item.children).filter(
+      child => child.tagName === 'UL' || child.tagName === 'OL'
+    );
+    
+    if (childLists.length > 1) {
+      // If we have multiple child lists, we need to reorganize them
+      const firstListType = childLists[0].tagName.toLowerCase();
+      
+      // Group subsequent lists under the last item of the previous list when types differ
+      for (let i = 1; i < childLists.length; i++) {
+        const currentList = childLists[i];
+        const currentType = currentList.tagName.toLowerCase();
+        
+        if (currentType !== firstListType) {
+          const previousList = childLists[i-1];
+          const lastItem = previousList.lastElementChild;
+          
+          if (lastItem) {
+            // Move the current list as a child of the last item in the previous list
+            lastItem.appendChild(currentList);
+          }
+        }
+      }
+    }
+  });
 }
 
 /**
@@ -297,7 +330,7 @@ function getPreviousElementInFlow(element: Element): Element | null {
 }
 
 /**
- * Fix list structure issues
+ * Fix list structure issues - enhanced for mixed list types
  */
 export const fixListStructure = (container: HTMLElement): void => {
   // Find naked list items (not in ul/ol)
@@ -333,6 +366,9 @@ export const fixListStructure = (container: HTMLElement): void => {
     }
   });
   
+  // Fix nested lists of different types
+  fixNestedListTypes(container);
+  
   // Fix nested ul/ol that are not inside li elements
   container.querySelectorAll('ul > ul, ul > ol, ol > ul, ol > ol').forEach(list => {
     const parent = list.parentElement;
@@ -348,3 +384,49 @@ export const fixListStructure = (container: HTMLElement): void => {
     }
   });
 };
+
+/**
+ * Fix incorrect nesting of different list types
+ */
+function fixNestedListTypes(container: HTMLElement): void {
+  // Find list items with multiple direct child lists
+  container.querySelectorAll('li').forEach(item => {
+    const childLists = Array.from(item.children).filter(
+      child => child.tagName === 'UL' || child.tagName === 'OL'
+    );
+    
+    if (childLists.length > 1) {
+      // Keep the first list as is
+      const firstList = childLists[0];
+      
+      // For each additional list, either merge with first list or nest properly
+      for (let i = 1; i < childLists.length; i++) {
+        const currentList = childLists[i];
+        
+        // If same type, merge the lists
+        if (currentList.tagName === firstList.tagName) {
+          // Move all children of the current list to the first list
+          while (currentList.firstChild) {
+            firstList.appendChild(currentList.firstChild);
+          }
+          // Remove the empty list
+          if (currentList.parentNode) {
+            currentList.parentNode.removeChild(currentList);
+          }
+        } else {
+          // Different list types - ensure proper nesting
+          // If the first list has items, attach to its last item
+          if (firstList.children.length > 0) {
+            const lastItem = firstList.lastElementChild;
+            if (lastItem) {
+              lastItem.appendChild(currentList);
+            }
+          } else {
+            // If the first list is empty, just keep both lists
+            continue;
+          }
+        }
+      }
+    }
+  });
+}
