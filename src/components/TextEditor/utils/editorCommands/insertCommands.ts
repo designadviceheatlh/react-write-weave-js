@@ -46,17 +46,17 @@ export const handleListIndentation = (isShiftKey = false, handleChange?: () => v
   if (!listItemNode) return false;
 
   // Get the parent list and its type
-  const parentList = listItemNode.parentElement as HTMLUListElement | HTMLOListElement;
+  const parentList = listItemNode.parentElement;
   if (!parentList || (parentList.nodeName !== 'UL' && parentList.nodeName !== 'OL')) return false;
 
   const listType = parentList.nodeName.toLowerCase();
 
   if (isShiftKey) {
     // OUTDENT: Move the current list item one level up
-    return handleListOutdent(listItemNode, parentList, listType, handleChange);
+    return handleListOutdent(listItemNode, parentList as HTMLUListElement | HTMLOListElement, listType, handleChange);
   } else {
     // INDENT: Nest the current list item under the previous sibling
-    return handleListIndent(listItemNode, parentList, listType, handleChange);
+    return handleListIndent(listItemNode, parentList as HTMLUListElement | HTMLOListElement, listType, handleChange);
   }
 };
 
@@ -65,7 +65,7 @@ export const handleListIndentation = (isShiftKey = false, handleChange?: () => v
  */
 function handleListIndent(
   listItem: HTMLLIElement,
-  parentList: HTMLElement,
+  parentList: HTMLUListElement | HTMLOListElement,
   listType: string,
   handleChange?: () => void
 ): boolean {
@@ -81,7 +81,7 @@ function handleListIndent(
   // Create a sublist if none exists
   if (!subList) {
     // Use the current list type for consistency
-    subList = document.createElement(listType);
+    subList = document.createElement(listType) as HTMLUListElement | HTMLOListElement;
     previousSibling.appendChild(subList);
   }
 
@@ -101,7 +101,7 @@ function handleListIndent(
  */
 function handleListOutdent(
   listItem: HTMLLIElement,
-  parentList: HTMLElement,
+  parentList: HTMLUListElement | HTMLOListElement,
   listType: string,
   handleChange?: () => void
 ): boolean {
@@ -130,9 +130,9 @@ function handleListOutdent(
     // If there's no existing sublist in the outdented item, create one
     const existingSublist = Array.from(listItem.children).find(
       child => child.nodeName === 'UL' || child.nodeName === 'OL'
-    ) as HTMLElement | undefined;
+    ) as HTMLUListElement | HTMLOListElement | undefined;
     
-    const newSublist = existingSublist || document.createElement(parentList.nodeName);
+    const newSublist = existingSublist || document.createElement(parentList.nodeName) as HTMLUListElement | HTMLOListElement;
     
     if (!existingSublist) {
       listItem.appendChild(newSublist);
