@@ -1,5 +1,4 @@
 
-
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600&display=swap');
 
 @tailwind base;
@@ -150,6 +149,7 @@
   font-weight: 600;
 }
 
+/* Updated list styles in prose to match inheritance pattern */
 .prose ul {
   list-style-type: disc;
   padding-left: 1.5rem;
@@ -161,11 +161,25 @@
 }
 
 .prose li {
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
-  font-style: normal;
-  font-weight: 400;
-  line-height: normal;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+/* Inherit styles from parent elements */
+.prose h1 li,
+.prose h2 li, 
+.prose h3 li {
+  font-weight: 500;
+}
+
+/* Preserve parent styles in nested lists */
+.prose ul ul,
+.prose ul ol,
+.prose ol ul,
+.prose ol ol {
+  margin-top: 0.25rem;
 }
 
 /* Preserve line breaks in PDF content */
@@ -185,4 +199,3 @@
   border: 1px solid #ddd;
   padding: 8px;
 }
-

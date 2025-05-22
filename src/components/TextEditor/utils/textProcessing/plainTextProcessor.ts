@@ -14,8 +14,9 @@ export const processPlainText = (text: string): string => {
   // Process line breaks to create paragraphs
   const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
   
-  let currentList: Array<{ content: string, type: string, level: number }> = [];
+  let currentList: Array<{ content: string, type: string, level: number, style?: string }> = [];
   let html = '';
+  let currentStyle = ''; // Track current text style (e.g., h1, h2, h3)
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -29,6 +30,9 @@ export const processPlainText = (text: string): string => {
         currentList = [];
       }
       
+      // Set current style to heading
+      currentStyle = `h${headingLevel}`;
+      
       // Add heading
       html += `<h${headingLevel}>${line.trim().replace(/^#+\s+/, '')}</h${headingLevel}>`;
     } else if (isList) {
@@ -40,14 +44,22 @@ export const processPlainText = (text: string): string => {
         content = line.replace(/^[\s]*(?:\d+|[a-z]+|(?:i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv)+)[.)]\s+/i, '');
       }
       
-      // Add to current list
-      currentList.push({ content, type: listType, level: listLevel });
+      // Add to current list with current style
+      currentList.push({ 
+        content, 
+        type: listType, 
+        level: listLevel,
+        style: currentStyle // Pass the current style to maintain heading/text styling
+      });
     } else {
       // End any open list
       if (currentList.length > 0) {
         html += buildNestedListHTML(currentList);
         currentList = [];
       }
+      
+      // Set style to paragraph
+      currentStyle = 'p';
       
       // Regular paragraph
       html += `<p>${line.trim()}</p>`;

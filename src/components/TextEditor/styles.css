@@ -94,7 +94,7 @@
   font-weight: 600;
 }
 
-/* Lists */
+/* Lists - Updated to inherit styles from parents */
 .text-editor-content ul {
   list-style-type: disc;
   padding-left: 1.5rem;
@@ -107,10 +107,33 @@
   margin-bottom: 0.5rem;
 }
 
+/* List items inherit parent text/heading styles */
 .text-editor-content li {
-  font-size: 0.875rem;
-  font-weight: 400;
-  line-height: 1.5;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+/* List items within headings */
+.text-editor-content h1 li,
+.text-editor-content h2 li,
+.text-editor-content h3 li {
+  font-weight: 500;
+}
+
+/* List items with strong/bold */
+.text-editor-content li strong,
+.text-editor-content li b {
+  font-weight: 600;
+}
+
+/* Preserve parent text styles in nested lists */
+.text-editor-content ul ul,
+.text-editor-content ul ol,
+.text-editor-content ol ul,
+.text-editor-content ol ol {
+  margin-top: 0.25rem;
 }
 
 /* Tables */

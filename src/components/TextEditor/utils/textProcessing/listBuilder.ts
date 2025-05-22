@@ -6,7 +6,7 @@
 /**
  * Builds nested list HTML from a list of items
  */
-export const buildNestedListHTML = (items: Array<{ content: string, type: string, level: number }>): string => {
+export const buildNestedListHTML = (items: Array<{ content: string, type: string, level: number, style?: string }>): string => {
   // Create root list container based on first item's type
   let html = `<${items[0].type}>`;
   
@@ -15,7 +15,7 @@ export const buildNestedListHTML = (items: Array<{ content: string, type: string
   let listStack = [items[0].type];  // Stack to track open list tags
   
   for (let i = 0; i < items.length; i++) {
-    const { content, type, level } = items[i];
+    const { content, type, level, style } = items[i];
     
     // Handle level changes
     if (level > currentLevel) {
@@ -31,8 +31,14 @@ export const buildNestedListHTML = (items: Array<{ content: string, type: string
       }
     }
     
-    // Add list item
-    html += `<li>${content}</li>`;
+    // Add list item with appropriate styling if needed
+    if (style && style !== 'p' && style.match(/^h[1-6]$/)) {
+      // If we have a heading style, apply it to the list item content
+      html += `<li><${style}>${content}</${style}></li>`;
+    } else {
+      // Regular list item
+      html += `<li>${content}</li>`;
+    }
     
     // If next item has different type or is not a list, close current list
     if (i === items.length - 1 || 

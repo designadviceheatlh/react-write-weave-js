@@ -25,6 +25,43 @@ const EditorContent: React.FC<EditorContentProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
 
+  // Preserve heading styles when creating lists
+  useEffect(() => {
+    if (editorRef.current) {
+      // Observe mutations to preserve styles when lists are created
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+          if (mutation.type === 'childList') {
+            // Check for new list elements
+            mutation.addedNodes.forEach(node => {
+              if (node instanceof HTMLElement) {
+                if (node.nodeName === 'UL' || node.nodeName === 'OL') {
+                  // Get the parent element style
+                  const parentStyle = node.parentElement?.nodeName;
+                  if (parentStyle && ['H1', 'H2', 'H3'].includes(parentStyle)) {
+                    // Ensure list items inside headings maintain the heading style
+                    node.querySelectorAll('li').forEach(li => {
+                      li.style.fontWeight = window.getComputedStyle(node.parentElement as HTMLElement).fontWeight;
+                      li.style.fontSize = window.getComputedStyle(node.parentElement as HTMLElement).fontSize;
+                    });
+                  }
+                }
+              }
+            });
+          }
+        });
+      });
+      
+      // Start observing
+      observer.observe(editorRef.current, { 
+        childList: true, 
+        subtree: true 
+      });
+      
+      return () => observer.disconnect();
+    }
+  }, []);
+
   // Handle keyboard shortcuts
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     // Ctrl+Z for undo
