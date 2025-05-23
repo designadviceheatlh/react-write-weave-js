@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bold, 
   Italic, 
@@ -24,12 +24,99 @@ import {
 } from './utils/textTransformations';
 
 const Toolbar = ({ executeCommand }) => {
+  // State to track active formatting states
+  const [activeStates, setActiveStates] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    justifyLeft: true,
+    justifyCenter: false,
+    justifyRight: false
+  });
+  
+  // State for dropdown visibility
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+
+  // Effect to check formatting on selection change
+  useEffect(() => {
+    const checkFormatting = () => {
+      setActiveStates({
+        bold: document.queryCommandState('bold'),
+        italic: document.queryCommandState('italic'),
+        underline: document.queryCommandState('underline'),
+        justifyLeft: document.queryCommandState('justifyLeft'),
+        justifyCenter: document.queryCommandState('justifyCenter'),
+        justifyRight: document.queryCommandState('justifyRight')
+      });
+    };
+
+    // Listen for selection changes to update button states
+    document.addEventListener('selectionchange', checkFormatting);
+    
+    // Cleanup
+    return () => {
+      document.removeEventListener('selectionchange', checkFormatting);
+    };
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.toolbar-dropdown')) {
+        setDropdownVisible(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
+
+  // Handle toolbar button click with visual feedback
+  const handleButtonClick = (command, value = null) => {
+    if (command === 'bold') {
+      handleBold(() => executeCommand('bold'));
+    } else if (command === 'undo') {
+      handleUndo(() => executeCommand('undo'));
+    } else if (command === 'redo') {
+      handleRedo(() => executeCommand('redo'));
+    } else if (command === 'insertDivider') {
+      handleInsertDivider(() => executeCommand(''));
+    } else {
+      executeCommand(command, value);
+    }
+    
+    // Update active states for toggled buttons
+    if (['bold', 'italic', 'underline', 'justifyLeft', 'justifyCenter', 'justifyRight'].includes(command)) {
+      setTimeout(() => {
+        setActiveStates(prev => ({
+          ...prev,
+          [command]: document.queryCommandState(command)
+        }));
+      }, 100);
+    }
+  };
+
+  // Handle text transformation with dropdown
+  const handleTransformText = (transformFn) => {
+    applyTextTransformation(transformFn, () => executeCommand(''));
+    setDropdownVisible(false);
+  };
+
+  // Toggle dropdown visibility
+  const toggleDropdown = (e) => {
+    e.stopPropagation();
+    setDropdownVisible(!dropdownVisible);
+  };
+
   return (
     <div className="flex items-center p-2 bg-white border-b">
       {/* Text style dropdown */}
       <div className="mr-2">
         <select 
-          className="h-9 w-[140px] text-sm border rounded-md px-2"
+          className="h-9 w-[140px] text-sm border rounded-md px-2 hover:border-gray-400 focus:border-gray-500 transition-colors"
           defaultValue="p"
           onChange={(e) => executeCommand('formatBlock', e.target.value)}
         >
@@ -43,16 +130,16 @@ const Toolbar = ({ executeCommand }) => {
       {/* Undo/Redo */}
       <div className="flex space-x-1 border-r pr-2 mr-2">
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => handleUndo(() => executeCommand('undo'))}
+          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
+          onClick={() => handleButtonClick('undo')}
           title="Desfazer (Ctrl+Z)"
         >
           <Undo size={18} />
         </button>
 
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => handleRedo(() => executeCommand('redo'))}
+          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
+          onClick={() => handleButtonClick('redo')}
           title="Refazer (Ctrl+Y)"
         >
           <Redo size={18} />
@@ -62,75 +149,60 @@ const Toolbar = ({ executeCommand }) => {
       {/* Text formatting */}
       <div className="flex space-x-1 border-r pr-2 mr-2">
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => handleBold(() => executeCommand('bold'))}
+          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.bold ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
+          onClick={() => handleButtonClick('bold')}
           title="Negrito (Ctrl+B)"
         >
           <Bold size={18} />
         </button>
 
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => executeCommand('italic')}
+          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.italic ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
+          onClick={() => handleButtonClick('italic')}
           title="Itálico (Ctrl+I)"
         >
           <Italic size={18} />
         </button>
 
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => executeCommand('underline')}
+          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.underline ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
+          onClick={() => handleButtonClick('underline')}
           title="Sublinhado (Ctrl+U)"
         >
           <Underline size={18} />
         </button>
         
         {/* Text transformation dropdown */}
-        <div className="relative">
+        <div className="toolbar-dropdown relative">
           <button 
-            className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
+            className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
             title="Transformar texto"
-            onClick={(e) => {
-              const menu = e.currentTarget.nextElementSibling;
-              menu.classList.toggle('hidden');
-            }}
+            onClick={toggleDropdown}
           >
             <Type size={18} />
           </button>
-          <div className="absolute left-0 mt-1 w-48 bg-white border rounded-md shadow-lg z-10 hidden">
+          <div className={`toolbar-dropdown-content ${dropdownVisible ? 'visible' : ''} mt-1`}>
             <button
-              className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              onClick={() => {
-                applyTextTransformation(transformToUppercase, () => executeCommand(''));
-                document.querySelector('.relative .hidden')?.classList.add('hidden');
-              }}
+              className="toolbar-dropdown-item"
+              onClick={() => handleTransformText(transformToUppercase)}
             >
               MAIÚSCULAS
             </button>
             <button
-              className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              onClick={() => {
-                applyTextTransformation(transformToLowercase, () => executeCommand(''));
-                document.querySelector('.relative .hidden')?.classList.add('hidden');
-              }}
+              className="toolbar-dropdown-item"
+              onClick={() => handleTransformText(transformToLowercase)}
             >
               minúsculas
             </button>
             <button
-              className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              onClick={() => {
-                applyTextTransformation(capitalizeWords, () => executeCommand(''));
-                document.querySelector('.relative .hidden')?.classList.add('hidden');
-              }}
+              className="toolbar-dropdown-item"
+              onClick={() => handleTransformText(capitalizeWords)}
             >
               Primeira Letra Maiúscula
             </button>
             <button
-              className="w-full text-left px-4 py-2 hover:bg-gray-100"
-              onClick={() => {
-                applyTextTransformation(capitalizeSentence, () => executeCommand(''));
-                document.querySelector('.relative .hidden')?.classList.add('hidden');
-              }}
+              className="toolbar-dropdown-item"
+              onClick={() => handleTransformText(capitalizeSentence)}
             >
               Primeira letra da frase
             </button>
@@ -141,24 +213,24 @@ const Toolbar = ({ executeCommand }) => {
       {/* Text alignment */}
       <div className="flex space-x-1 border-r pr-2 mr-2">
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => executeCommand('justifyLeft')}
+          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.justifyLeft ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
+          onClick={() => handleButtonClick('justifyLeft')}
           title="Alinhar à esquerda"
         >
           <AlignLeft size={18} />
         </button>
 
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => executeCommand('justifyCenter')}
+          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.justifyCenter ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
+          onClick={() => handleButtonClick('justifyCenter')}
           title="Centralizar"
         >
           <AlignCenter size={18} />
         </button>
 
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => executeCommand('justifyRight')}
+          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.justifyRight ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
+          onClick={() => handleButtonClick('justifyRight')}
           title="Alinhar à direita"
         >
           <AlignRight size={18} />
@@ -168,16 +240,16 @@ const Toolbar = ({ executeCommand }) => {
       {/* Lists */}
       <div className="flex space-x-1 border-r pr-2 mr-2">
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => executeCommand('insertUnorderedList')}
+          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
+          onClick={() => handleButtonClick('insertUnorderedList')}
           title="Lista com marcadores"
         >
           <List size={18} />
         </button>
 
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => executeCommand('insertOrderedList')}
+          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
+          onClick={() => handleButtonClick('insertOrderedList')}
           title="Lista numerada"
         >
           <ListOrdered size={18} />
@@ -187,24 +259,13 @@ const Toolbar = ({ executeCommand }) => {
       {/* Divider button */}
       <div className="flex space-x-1">
         <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100"
-          onClick={() => handleInsertDivider(() => executeCommand(''))}
+          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
+          onClick={() => handleButtonClick('insertDivider')}
           title="Inserir divisor"
         >
           <SeparatorHorizontal size={18} />
         </button>
       </div>
-
-      {/* Close dropdown when clicking outside */}
-      <script dangerouslySetInnerHTML={{__html: `
-        document.addEventListener('click', function(e) {
-          if (!e.target.closest('.relative')) {
-            document.querySelectorAll('.relative .absolute').forEach(menu => {
-              menu.classList.add('hidden');
-            });
-          }
-        });
-      `}} />
     </div>
   );
 };
