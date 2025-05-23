@@ -23,6 +23,19 @@ import {
   capitalizeSentence 
 } from './utils/textTransformations';
 
+import { 
+  AppBar,
+  Toolbar as MuiToolbar,
+  IconButton,
+  Divider,
+  Select,
+  MenuItem,
+  FormControl,
+  Menu,
+  Tooltip,
+  Paper
+} from '@mui/material';
+
 const Toolbar = ({ executeCommand }) => {
   // State to track active formatting states
   const [activeStates, setActiveStates] = useState({
@@ -34,9 +47,9 @@ const Toolbar = ({ executeCommand }) => {
     justifyRight: false
   });
   
-  // State for dropdown visibility
-  const [dropdownVisible, setDropdownVisible] = useState(false);
-
+  // State for dropdown visibility and anchor element
+  const [textTransformAnchor, setTextTransformAnchor] = useState(null);
+  
   // Effect to check formatting on selection change
   useEffect(() => {
     const checkFormatting = () => {
@@ -56,21 +69,6 @@ const Toolbar = ({ executeCommand }) => {
     // Cleanup
     return () => {
       document.removeEventListener('selectionchange', checkFormatting);
-    };
-  }, []);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest('.toolbar-dropdown')) {
-        setDropdownVisible(false);
-      }
-    };
-    
-    document.addEventListener('click', handleClickOutside);
-    
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
     };
   }, []);
 
@@ -102,171 +100,254 @@ const Toolbar = ({ executeCommand }) => {
   // Handle text transformation with dropdown
   const handleTransformText = (transformFn) => {
     applyTextTransformation(transformFn, () => executeCommand(''));
-    setDropdownVisible(false);
+    handleCloseTextTransform();
   };
 
-  // Toggle dropdown visibility
-  const toggleDropdown = (e) => {
-    e.stopPropagation();
-    setDropdownVisible(!dropdownVisible);
+  // Open text transformation dropdown
+  const handleOpenTextTransform = (event) => {
+    setTextTransformAnchor(event.currentTarget);
+  };
+
+  // Close text transformation dropdown
+  const handleCloseTextTransform = () => {
+    setTextTransformAnchor(null);
+  };
+
+  // Check if text transform menu is open
+  const isTextTransformOpen = Boolean(textTransformAnchor);
+
+  // Get style for active state buttons
+  const getActiveStyle = (command) => {
+    return activeStates[command] ? { 
+      backgroundColor: '#e0e0e0', 
+      color: '#1976d2'
+    } : {};
   };
 
   return (
-    <div className="flex items-center p-2 bg-white border-b">
-      {/* Text style dropdown */}
-      <div className="mr-2">
-        <select 
-          className="h-9 w-[140px] text-sm border rounded-md px-2 hover:border-gray-400 focus:border-gray-500 transition-colors"
-          defaultValue="p"
-          onChange={(e) => executeCommand('formatBlock', e.target.value)}
+    <Paper elevation={0} square className="border-b">
+      <MuiToolbar variant="dense" className="flex flex-wrap items-center px-2 py-1">
+        {/* Text style dropdown */}
+        <FormControl 
+          size="small" 
+          variant="outlined" 
+          className="mr-2 min-w-[140px]"
+          sx={{ 
+            marginRight: '8px',
+            '& .MuiOutlinedInput-root': {
+              height: '36px',
+              fontSize: '14px'
+            }
+          }}
         >
-          <option value="p">Texto Normal</option>
-          <option value="h1">Título 1</option>
-          <option value="h2">Título 2</option>
-          <option value="h3">Título 3</option>
-        </select>
-      </div>
-
-      {/* Undo/Redo */}
-      <div className="flex space-x-1 border-r pr-2 mr-2">
-        <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
-          onClick={() => handleButtonClick('undo')}
-          title="Desfazer (Ctrl+Z)"
-        >
-          <Undo size={18} />
-        </button>
-
-        <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
-          onClick={() => handleButtonClick('redo')}
-          title="Refazer (Ctrl+Y)"
-        >
-          <Redo size={18} />
-        </button>
-      </div>
-
-      {/* Text formatting */}
-      <div className="flex space-x-1 border-r pr-2 mr-2">
-        <button 
-          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.bold ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
-          onClick={() => handleButtonClick('bold')}
-          title="Negrito (Ctrl+B)"
-        >
-          <Bold size={18} />
-        </button>
-
-        <button 
-          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.italic ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
-          onClick={() => handleButtonClick('italic')}
-          title="Itálico (Ctrl+I)"
-        >
-          <Italic size={18} />
-        </button>
-
-        <button 
-          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.underline ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
-          onClick={() => handleButtonClick('underline')}
-          title="Sublinhado (Ctrl+U)"
-        >
-          <Underline size={18} />
-        </button>
-        
-        {/* Text transformation dropdown */}
-        <div className="toolbar-dropdown relative">
-          <button 
-            className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
-            title="Transformar texto"
-            onClick={toggleDropdown}
+          <Select
+            defaultValue="p"
+            onChange={(e) => executeCommand('formatBlock', e.target.value)}
+            displayEmpty
+            sx={{ minWidth: 120 }}
           >
-            <Type size={18} />
-          </button>
-          <div className={`toolbar-dropdown-content ${dropdownVisible ? 'visible' : ''} mt-1`}>
-            <button
-              className="toolbar-dropdown-item"
-              onClick={() => handleTransformText(transformToUppercase)}
+            <MenuItem value="p">Texto Normal</MenuItem>
+            <MenuItem value="h1">Título 1</MenuItem>
+            <MenuItem value="h2">Título 2</MenuItem>
+            <MenuItem value="h3">Título 3</MenuItem>
+          </Select>
+        </FormControl>
+
+        {/* Undo/Redo */}
+        <div className="flex space-x-1 mr-2">
+          <Tooltip title="Desfazer (Ctrl+Z)">
+            <IconButton 
+              size="small" 
+              onClick={() => handleButtonClick('undo')}
+              sx={{ padding: '8px' }}
             >
-              MAIÚSCULAS
-            </button>
-            <button
-              className="toolbar-dropdown-item"
-              onClick={() => handleTransformText(transformToLowercase)}
+              <Undo size={20} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Refazer (Ctrl+Y)">
+            <IconButton 
+              size="small" 
+              onClick={() => handleButtonClick('redo')}
+              sx={{ padding: '8px' }}
             >
-              minúsculas
-            </button>
-            <button
-              className="toolbar-dropdown-item"
-              onClick={() => handleTransformText(capitalizeWords)}
-            >
-              Primeira Letra Maiúscula
-            </button>
-            <button
-              className="toolbar-dropdown-item"
-              onClick={() => handleTransformText(capitalizeSentence)}
-            >
-              Primeira letra da frase
-            </button>
-          </div>
+              <Redo size={20} />
+            </IconButton>
+          </Tooltip>
         </div>
-      </div>
 
-      {/* Text alignment */}
-      <div className="flex space-x-1 border-r pr-2 mr-2">
-        <button 
-          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.justifyLeft ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
-          onClick={() => handleButtonClick('justifyLeft')}
-          title="Alinhar à esquerda"
-        >
-          <AlignLeft size={18} />
-        </button>
+        <Divider orientation="vertical" flexItem sx={{ mx: 1, height: '28px', alignSelf: 'center' }} />
 
-        <button 
-          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.justifyCenter ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
-          onClick={() => handleButtonClick('justifyCenter')}
-          title="Centralizar"
-        >
-          <AlignCenter size={18} />
-        </button>
+        {/* Text formatting */}
+        <div className="flex space-x-1 mr-2">
+          <Tooltip title="Negrito (Ctrl+B)">
+            <IconButton 
+              size="small"
+              onClick={() => handleButtonClick('bold')}
+              sx={{ 
+                padding: '8px',
+                ...getActiveStyle('bold')
+              }}
+            >
+              <Bold size={20} />
+            </IconButton>
+          </Tooltip>
 
-        <button 
-          className={`h-8 w-8 flex items-center justify-center rounded transition-all ${activeStates.justifyRight ? 'bg-gray-200 text-gray-800' : 'hover:bg-gray-100 active:bg-gray-200'}`}
-          onClick={() => handleButtonClick('justifyRight')}
-          title="Alinhar à direita"
-        >
-          <AlignRight size={18} />
-        </button>
-      </div>
+          <Tooltip title="Itálico (Ctrl+I)">
+            <IconButton 
+              size="small"
+              onClick={() => handleButtonClick('italic')}
+              sx={{ 
+                padding: '8px',
+                ...getActiveStyle('italic')
+              }}
+            >
+              <Italic size={20} />
+            </IconButton>
+          </Tooltip>
 
-      {/* Lists */}
-      <div className="flex space-x-1 border-r pr-2 mr-2">
-        <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
-          onClick={() => handleButtonClick('insertUnorderedList')}
-          title="Lista com marcadores"
-        >
-          <List size={18} />
-        </button>
+          <Tooltip title="Sublinhado (Ctrl+U)">
+            <IconButton 
+              size="small"
+              onClick={() => handleButtonClick('underline')}
+              sx={{ 
+                padding: '8px',
+                ...getActiveStyle('underline')
+              }}
+            >
+              <Underline size={20} />
+            </IconButton>
+          </Tooltip>
+          
+          {/* Text transformation dropdown */}
+          <Tooltip title="Transformar texto">
+            <IconButton 
+              size="small"
+              onClick={handleOpenTextTransform}
+              sx={{ padding: '8px' }}
+            >
+              <Type size={20} />
+            </IconButton>
+          </Tooltip>
+          <Menu
+            anchorEl={textTransformAnchor}
+            open={isTextTransformOpen}
+            onClose={handleCloseTextTransform}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'left',
+            }}
+            sx={{ 
+              '& .MuiPaper-root': { 
+                minWidth: '200px',
+                boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.2)'
+              }
+            }}
+          >
+            <MenuItem onClick={() => handleTransformText(transformToUppercase)}>
+              MAIÚSCULAS
+            </MenuItem>
+            <MenuItem onClick={() => handleTransformText(transformToLowercase)}>
+              minúsculas
+            </MenuItem>
+            <MenuItem onClick={() => handleTransformText(capitalizeWords)}>
+              Primeira Letra Maiúscula
+            </MenuItem>
+            <MenuItem onClick={() => handleTransformText(capitalizeSentence)}>
+              Primeira letra da frase
+            </MenuItem>
+          </Menu>
+        </div>
 
-        <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
-          onClick={() => handleButtonClick('insertOrderedList')}
-          title="Lista numerada"
-        >
-          <ListOrdered size={18} />
-        </button>
-      </div>
-      
-      {/* Divider button */}
-      <div className="flex space-x-1">
-        <button 
-          className="h-8 w-8 flex items-center justify-center rounded hover:bg-gray-100 active:bg-gray-200 transition-all"
-          onClick={() => handleButtonClick('insertDivider')}
-          title="Inserir divisor"
-        >
-          <SeparatorHorizontal size={18} />
-        </button>
-      </div>
-    </div>
+        <Divider orientation="vertical" flexItem sx={{ mx: 1, height: '28px', alignSelf: 'center' }} />
+
+        {/* Text alignment */}
+        <div className="flex space-x-1 mr-2">
+          <Tooltip title="Alinhar à esquerda">
+            <IconButton 
+              size="small"
+              onClick={() => handleButtonClick('justifyLeft')}
+              sx={{ 
+                padding: '8px',
+                ...getActiveStyle('justifyLeft')
+              }}
+            >
+              <AlignLeft size={20} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Centralizar">
+            <IconButton 
+              size="small"
+              onClick={() => handleButtonClick('justifyCenter')}
+              sx={{ 
+                padding: '8px',
+                ...getActiveStyle('justifyCenter')
+              }}
+            >
+              <AlignCenter size={20} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Alinhar à direita">
+            <IconButton 
+              size="small"
+              onClick={() => handleButtonClick('justifyRight')}
+              sx={{ 
+                padding: '8px',
+                ...getActiveStyle('justifyRight')
+              }}
+            >
+              <AlignRight size={20} />
+            </IconButton>
+          </Tooltip>
+        </div>
+
+        <Divider orientation="vertical" flexItem sx={{ mx: 1, height: '28px', alignSelf: 'center' }} />
+
+        {/* Lists */}
+        <div className="flex space-x-1 mr-2">
+          <Tooltip title="Lista com marcadores">
+            <IconButton 
+              size="small"
+              onClick={() => handleButtonClick('insertUnorderedList')}
+              sx={{ padding: '8px' }}
+            >
+              <List size={20} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Lista numerada">
+            <IconButton 
+              size="small"
+              onClick={() => handleButtonClick('insertOrderedList')}
+              sx={{ padding: '8px' }}
+            >
+              <ListOrdered size={20} />
+            </IconButton>
+          </Tooltip>
+        </div>
+
+        <Divider orientation="vertical" flexItem sx={{ mx: 1, height: '28px', alignSelf: 'center' }} />
+        
+        {/* Divider button */}
+        <div className="flex space-x-1">
+          <Tooltip title="Inserir divisor">
+            <IconButton 
+              size="small"
+              onClick={() => handleButtonClick('insertDivider')}
+              sx={{ padding: '8px' }}
+            >
+              <SeparatorHorizontal size={20} />
+            </IconButton>
+          </Tooltip>
+        </div>
+      </MuiToolbar>
+    </Paper>
   );
 };
 
