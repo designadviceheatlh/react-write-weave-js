@@ -201,43 +201,37 @@
 
 /* Review mode highlight styles */
 .text-highlight {
-  display: none;
+  background-color: transparent;
+  border-bottom: none;
 }
 
-[data-review-mode="true"] .text-highlight {
-  display: inline;
-  padding: 2px 1px;
-  border-radius: 2px;
-  position: relative;
-}
-
-.highlight-yellow {
+[data-review-mode="true"] .text-highlight.highlight-yellow {
   background-color: rgba(255, 235, 59, 0.4);
   border-bottom: 2px solid #FFEB3B;
 }
 
-.highlight-green {
+[data-review-mode="true"] .text-highlight.highlight-green {
   background-color: rgba(76, 175, 80, 0.3);
   border-bottom: 2px solid #4CAF50;
 }
 
-.highlight-blue {
+[data-review-mode="true"] .text-highlight.highlight-blue {
   background-color: rgba(33, 150, 243, 0.3);
   border-bottom: 2px solid #2196F3;
 }
 
-.highlight-pink {
+[data-review-mode="true"] .text-highlight.highlight-pink {
   background-color: rgba(233, 30, 99, 0.3);
   border-bottom: 2px solid #E91E63;
 }
 
-.highlight-orange {
+[data-review-mode="true"] .text-highlight.highlight-orange {
   background-color: rgba(255, 152, 0, 0.3);
   border-bottom: 2px solid #FF9800;
 }
 
-/* Hover effect for highlights */
-.text-highlight:hover {
+/* Hover effect for highlights in review mode */
+[data-review-mode="true"] .text-highlight:hover {
   opacity: 0.8;
   cursor: pointer;
 }
