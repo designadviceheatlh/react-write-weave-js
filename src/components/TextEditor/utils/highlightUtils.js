@@ -41,6 +41,9 @@ export const highlightSelection = (color = 'yellow') => {
   mark.className = `text-highlight ${HIGHLIGHT_CLASSES[color]}`;
   mark.setAttribute('data-highlight-color', color);
   mark.setAttribute('data-highlight-id', Date.now().toString());
+  mark.style.backgroundColor = HIGHLIGHT_COLORS[color];
+  mark.style.padding = '0px 2px';
+  mark.style.borderRadius = '2px';
   
   try {
     range.surroundContents(mark);
