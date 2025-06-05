@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { handlePaste } from './utils/pasteHandling';
 import { handleUndo, handleRedo } from './utils/editorCommands';
@@ -118,6 +117,7 @@ const EditorContent = ({
         onPaste={handlePasteEvent}
         onKeyDown={handleKeyDown}
         data-testid="text-editor"
+        data-review-mode={isReviewMode}
         dangerouslySetInnerHTML={{ __html: initialValue }}
         style={{
           userSelect: isReviewMode ? 'text' : 'auto',

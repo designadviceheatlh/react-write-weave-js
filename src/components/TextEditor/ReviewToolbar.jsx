@@ -4,12 +4,14 @@ import { highlightSelection, removeHighlight, clearAllHighlights, getAllHighligh
 import { AppBar, Toolbar as MuiToolbar, Paper, Divider } from '@mui/material';
 import ToolbarButton from './components/ToolbarButton';
 import ToolbarSection from './components/ToolbarSection';
+
 const ReviewToolbar = ({
   editorRef,
   onHighlightChange
 }) => {
   const [selectedColor, setSelectedColor] = useState('yellow');
   const [highlightCount, setHighlightCount] = useState(0);
+
   const handleHighlight = () => {
     const success = highlightSelection(selectedColor);
     if (success && onHighlightChange) {
@@ -18,6 +20,7 @@ const ReviewToolbar = ({
       onHighlightChange();
     }
   };
+
   const handleRemoveHighlight = () => {
     const success = removeHighlight();
     if (success && onHighlightChange) {
@@ -26,6 +29,7 @@ const ReviewToolbar = ({
       onHighlightChange();
     }
   };
+
   const handleClearAll = () => {
     const cleared = clearAllHighlights(editorRef.current);
     if (cleared > 0) {
@@ -35,17 +39,13 @@ const ReviewToolbar = ({
       }
     }
   };
-  return <Paper elevation={0} square className="border-b bg-orange-50">
+
+  return (
+    <Paper elevation={0} square className="border-b bg-orange-50">
       <MuiToolbar variant="dense" className="flex flex-wrap items-center px-2 py-1">
-        {/* Mode indicator */}
-        <ToolbarSection>
-          
-        </ToolbarSection>
-        
         {/* Highlight actions */}
         <ToolbarSection>
           <ToolbarButton icon={Highlighter} tooltip="Grifar texto selecionado" onClick={handleHighlight} />
-          
           <ToolbarButton icon={Eraser} tooltip="Remover grifo selecionado" onClick={handleRemoveHighlight} />
         </ToolbarSection>
 
@@ -54,21 +54,39 @@ const ReviewToolbar = ({
           <div className="flex items-center space-x-2 px-2">
             <span className="text-xs text-gray-600 font-medium">Cor:</span>
             <div className="flex items-center space-x-1">
-              {Object.entries(HIGHLIGHT_COLORS).map(([colorName, colorValue]) => <button key={colorName} onClick={() => setSelectedColor(colorName)} className={`w-6 h-6 rounded-full border-2 transition-all hover:scale-110 ${selectedColor === colorName ? 'border-gray-700 ring-2 ring-gray-300 ring-offset-1' : 'border-gray-300 hover:border-gray-500'}`} style={{
-              backgroundColor: colorValue
-            }} title={`Cor: ${colorName.charAt(0).toUpperCase() + colorName.slice(1)}`} />)}
+              {Object.entries(HIGHLIGHT_COLORS).map(([colorName, colorValue]) => (
+                <button
+                  key={colorName}
+                  onClick={() => setSelectedColor(colorName)}
+                  className={`w-6 h-6 rounded-full transition-all hover:scale-110 ${
+                    selectedColor === colorName 
+                      ? 'ring-2 ring-gray-400 ring-offset-2' 
+                      : 'ring-1 ring-gray-200'
+                  }`}
+                  style={{
+                    backgroundColor: colorValue,
+                    borderColor: selectedColor === colorName ? '#4B5563' : '#E5E7EB'
+                  }}
+                  title={`Cor: ${colorName.charAt(0).toUpperCase() + colorName.slice(1)}`}
+                />
+              ))}
             </div>
           </div>
         </ToolbarSection>
 
         {/* Clear all */}
         <ToolbarSection>
-          <ToolbarButton icon={RotateCcw} tooltip="Limpar todos os grifos" onClick={handleClearAll} sx={{
-          color: '#dc2626',
-          '&:hover': {
-            backgroundColor: '#fee2e2'
-          }
-        }} />
+          <ToolbarButton
+            icon={RotateCcw}
+            tooltip="Limpar todos os grifos"
+            onClick={handleClearAll}
+            sx={{
+              color: '#dc2626',
+              '&:hover': {
+                backgroundColor: '#fee2e2'
+              }
+            }}
+          />
         </ToolbarSection>
 
         {/* Stats */}
@@ -81,6 +99,8 @@ const ReviewToolbar = ({
           </div>
         </ToolbarSection>
       </MuiToolbar>
-    </Paper>;
+    </Paper>
+  );
 };
+
 export default ReviewToolbar;
