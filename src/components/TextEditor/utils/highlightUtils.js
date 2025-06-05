@@ -4,11 +4,11 @@
  */
 
 export const HIGHLIGHT_COLORS = {
-  yellow: '#FFEB3B',
-  green: '#4CAF50',
-  blue: '#2196F3',
-  pink: '#E91E63',
-  orange: '#FF9800'
+  yellow: '#FEF08A',
+  green: '#BBF7D0',
+  blue: '#BFDBFE',
+  pink: '#FBCFE8',
+  orange: '#FED7AA'
 };
 
 export const HIGHLIGHT_CLASSES = {
