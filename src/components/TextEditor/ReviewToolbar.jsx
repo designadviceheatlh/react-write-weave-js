@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Highlighter, Eraser, RotateCcw, List } from 'lucide-react';
 import { highlightSelection, removeHighlight, clearAllHighlights, getAllHighlights, HIGHLIGHT_COLORS } from './utils/highlightUtils';
 import { AppBar, Toolbar as MuiToolbar, Paper, Divider } from '@mui/material';
@@ -12,6 +12,14 @@ const ReviewToolbar = ({
 }) => {
   const [selectedColor, setSelectedColor] = useState('yellow');
   const [highlightCount, setHighlightCount] = useState(0);
+
+  // Update highlight count when component mounts or editor changes
+  useEffect(() => {
+    if (editorRef.current) {
+      const count = getAllHighlights(editorRef.current).length;
+      setHighlightCount(count);
+    }
+  }, [editorRef.current]);
 
   const handleHighlight = () => {
     const success = highlightSelection(selectedColor);
@@ -94,7 +102,7 @@ const ReviewToolbar = ({
           <div className="flex items-center space-x-2 px-3">
             <List size={16} className="text-gray-600" />
             <span className="text-sm font-medium text-gray-700">
-              Marcações: {highlightCount < 10 ? `0${highlightCount}` : highlightCount}
+              Marcações: {highlightCount.toString().padStart(2, '0')}
             </span>
           </div>
         </ToolbarSection>
