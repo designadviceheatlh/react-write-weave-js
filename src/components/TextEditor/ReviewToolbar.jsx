@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Highlighter, Eraser, RotateCcw, Eye, List } from 'lucide-react';
 import { highlightSelection, removeHighlight, clearAllHighlights, getAllHighlights, HIGHLIGHT_COLORS } from './utils/highlightUtils';
@@ -58,14 +59,13 @@ const ReviewToolbar = ({
                 <button
                   key={colorName}
                   onClick={() => setSelectedColor(colorName)}
-                  className={`w-6 h-6 rounded-full transition-all hover:scale-110 ${
+                  className={`w-6 h-6 rounded-full border-2 transition-all hover:scale-110 ${
                     selectedColor === colorName 
-                      ? 'ring-2 ring-gray-400 ring-offset-2' 
-                      : 'ring-1 ring-gray-200'
+                      ? 'border-gray-600 shadow-md' 
+                      : 'border-gray-300 hover:border-gray-400'
                   }`}
                   style={{
-                    backgroundColor: colorValue,
-                    borderColor: selectedColor === colorName ? '#4B5563' : '#E5E7EB'
+                    backgroundColor: colorValue
                   }}
                   title={`Cor: ${colorName.charAt(0).toUpperCase() + colorName.slice(1)}`}
                 />
