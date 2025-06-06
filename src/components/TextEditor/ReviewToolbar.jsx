@@ -60,7 +60,7 @@ const ReviewToolbar = ({
 
         {/* Color selector */}
         <ToolbarSection>
-          <div className="flex items-center space-x-3 px-3">
+          <div className="flex items-center space-x-2 px-3">
             <span className="text-sm text-gray-700 font-medium">Cor:</span>
             <div className="flex items-center space-x-2">
               {Object.entries(HIGHLIGHT_COLORS).map(([colorName, colorValue]) => (
