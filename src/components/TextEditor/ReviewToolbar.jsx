@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Highlighter, Eraser, RotateCcw, Eye, List } from 'lucide-react';
+import { Highlighter, Eraser, RotateCcw, List } from 'lucide-react';
 import { highlightSelection, removeHighlight, clearAllHighlights, getAllHighlights, HIGHLIGHT_COLORS } from './utils/highlightUtils';
 import { AppBar, Toolbar as MuiToolbar, Paper, Divider } from '@mui/material';
 import ToolbarButton from './components/ToolbarButton';
@@ -52,17 +52,17 @@ const ReviewToolbar = ({
 
         {/* Color selector */}
         <ToolbarSection>
-          <div className="flex items-center space-x-2 px-2">
-            <span className="text-xs text-gray-600 font-medium">Cor:</span>
-            <div className="flex items-center space-x-1">
+          <div className="flex items-center space-x-3 px-3">
+            <span className="text-sm text-gray-700 font-medium">Cor:</span>
+            <div className="flex items-center space-x-2">
               {Object.entries(HIGHLIGHT_COLORS).map(([colorName, colorValue]) => (
                 <button
                   key={colorName}
                   onClick={() => setSelectedColor(colorName)}
-                  className={`w-6 h-6 rounded-full border-2 transition-all hover:scale-110 ${
+                  className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-400 ${
                     selectedColor === colorName 
-                      ? 'border-gray-600 shadow-md' 
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-gray-800 shadow-lg ring-2 ring-gray-400 ring-offset-1' 
+                      : 'border-gray-400 hover:border-gray-600'
                   }`}
                   style={{
                     backgroundColor: colorValue
@@ -91,10 +91,10 @@ const ReviewToolbar = ({
 
         {/* Stats */}
         <ToolbarSection showDivider={false}>
-          <div className="flex items-center space-x-2 px-2">
+          <div className="flex items-center space-x-2 px-3">
             <List size={16} className="text-gray-600" />
             <span className="text-sm font-medium text-gray-700">
-              {highlightCount} {highlightCount === 1 ? 'grifo' : 'grifos'}
+              Marcações: {highlightCount < 10 ? `0${highlightCount}` : highlightCount}
             </span>
           </div>
         </ToolbarSection>

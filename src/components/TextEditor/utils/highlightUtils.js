@@ -1,22 +1,21 @@
-
 /**
  * Utility functions for text highlighting in review mode
  */
 
 export const HIGHLIGHT_COLORS = {
   yellow: '#FEF08A',
-  green: '#BBF7D0',
-  blue: '#BFDBFE',
+  orange: '#FED7AA', 
   pink: '#FBCFE8',
-  orange: '#FED7AA'
+  blue: '#BFDBFE',
+  green: '#BBF7D0'
 };
 
 export const HIGHLIGHT_CLASSES = {
   yellow: 'highlight-yellow',
-  green: 'highlight-green',
-  blue: 'highlight-blue',
+  orange: 'highlight-orange',
   pink: 'highlight-pink',
-  orange: 'highlight-orange'
+  blue: 'highlight-blue',
+  green: 'highlight-green'
 };
 
 /**
@@ -41,9 +40,6 @@ export const highlightSelection = (color = 'yellow') => {
   mark.className = `text-highlight ${HIGHLIGHT_CLASSES[color]}`;
   mark.setAttribute('data-highlight-color', color);
   mark.setAttribute('data-highlight-id', Date.now().toString());
-  mark.style.backgroundColor = HIGHLIGHT_COLORS[color];
-  mark.style.padding = '0px 2px';
-  mark.style.borderRadius = '2px';
   
   try {
     range.surroundContents(mark);
