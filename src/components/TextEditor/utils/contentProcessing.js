@@ -1,12 +1,10 @@
 
 /**
- * Utilities for detecting the source of content
+ * Utilities for detecting and processing content from various sources
  */
 
-/**
- * Detects the source of pasted content based on HTML patterns
- */
-export const detectContentSource = (html: string): string => {
+// Simple content detection
+export const detectContentSource = (html) => {
   // Check for PDF specific patterns
   if (html.includes('data-pdf-')) return 'pdf';
   
@@ -24,12 +22,13 @@ export const detectContentSource = (html: string): string => {
     html.includes('google-docs')
   ) return 'google-docs';
   
-  // Check for Outlook patterns
-  if (
-    html.includes('outlook') ||
-    html.includes('urn:schemas-microsoft-com:office:office')
-  ) return 'outlook';
-  
   // If unknown, default to website
   return 'web';
+};
+
+// Simple plain text processing
+export const processPlainText = (text) => {
+  // Convert line breaks to paragraphs
+  const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+  return lines.map(line => `<p>${line.trim()}</p>`).join('');
 };

@@ -8,6 +8,7 @@ import { Textarea } from '../ui/textarea';
 import { toast } from '../ui/use-toast';
 import { Check, Save, Eye, Edit } from 'lucide-react';
 import { getAllHighlights } from './utils/highlightUtils';
+
 const TextEditor = ({
   initialValue = '',
   onChange,

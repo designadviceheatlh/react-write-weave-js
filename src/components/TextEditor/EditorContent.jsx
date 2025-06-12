@@ -1,7 +1,6 @@
-import React, { useRef, useEffect } from 'react';
-import { handlePaste } from './utils/pasteHandling';
-import { handleUndo, handleRedo } from './utils/editorCommands';
-import { handleListIndentation } from './utils/editorCommands/insertCommands';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { handlePaste } from './utils/pasteHandler';
+import { handleUndo, handleRedo, handleListIndentation } from './utils/editorCommands';
 
 const EditorContent = ({
   initialValue,
@@ -11,7 +10,7 @@ const EditorContent = ({
   isFocused,
   setIsFocused,
   setIsEmpty,
-  isReviewMode = false
+  isReviewMode
 }) => {
   const editorRef = useRef(null);
 
@@ -53,36 +52,26 @@ const EditorContent = ({
   }, []);
 
   // Handle keyboard shortcuts
-  const handleKeyDown = (e) => {
-    // Prevent editing shortcuts in review mode
-    if (isReviewMode) {
-      // Allow only selection and navigation keys
-      const allowedKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'];
-      if (!allowedKeys.includes(e.key) && !e.ctrlKey) {
-        e.preventDefault();
-        return;
-      }
-    }
-
-    // Ctrl+Z for undo (only in edit mode)
-    if (e.ctrlKey && e.key === 'z' && !isReviewMode) {
+  const handleKeyDown = useCallback((e) => {
+    // Ctrl+Z for undo
+    if (e.ctrlKey && e.key === 'z') {
       e.preventDefault();
       handleUndo(onChange);
     }
-    // Ctrl+Y or Ctrl+Shift+Z for redo (only in edit mode)
-    if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z') && !isReviewMode) {
+    // Ctrl+Y or Ctrl+Shift+Z for redo
+    if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
       e.preventDefault();
       handleRedo(onChange);
     }
     
-    // Handle Tab key for list indentation (only in edit mode)
-    if (e.key === 'Tab' && !isReviewMode) {
+    // Handle Tab key for list indentation
+    if (e.key === 'Tab') {
       const isListIndented = handleListIndentation(e.shiftKey, onChange);
       if (isListIndented) {
         e.preventDefault(); // Prevent default tab behavior only if we handled a list indentation
       }
     }
-  };
+  }, [onChange]);
 
   const handleInput = () => {
     if (isReviewMode) return; // Prevent input changes in review mode
