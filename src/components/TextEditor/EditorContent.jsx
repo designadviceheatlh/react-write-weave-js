@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { handlePaste } from './utils/pasteHandler';
 import { handleUndo, handleRedo, handleListIndentation } from './utils/editorCommands';
+import { sanitizeHTML, validateContentLength } from './utils/htmlSanitizer';
 
 const EditorContent = ({
   initialValue,
@@ -13,6 +14,9 @@ const EditorContent = ({
   isReviewMode
 }) => {
   const editorRef = useRef(null);
+  
+  // Sanitize initial value
+  const sanitizedInitialValue = sanitizeHTML(validateContentLength(initialValue || ''));
 
   // Preserve heading styles when creating lists
   useEffect(() => {
@@ -75,6 +79,18 @@ const EditorContent = ({
 
   const handleInput = () => {
     if (isReviewMode) return; // Prevent input changes in review mode
+    
+    // Sanitize content on every input change
+    if (editorRef.current) {
+      const currentHTML = editorRef.current.innerHTML;
+      const sanitizedHTML = sanitizeHTML(currentHTML);
+      
+      // Only update if sanitization changed something (to avoid infinite loops)
+      if (currentHTML !== sanitizedHTML) {
+        editorRef.current.innerHTML = sanitizedHTML;
+      }
+    }
+    
     onChange();
     setIsEmpty(editorRef.current?.textContent === '');
   };
@@ -107,7 +123,7 @@ const EditorContent = ({
         onKeyDown={handleKeyDown}
         data-testid="text-editor"
         data-review-mode={isReviewMode}
-        dangerouslySetInnerHTML={{ __html: initialValue }}
+        dangerouslySetInnerHTML={{ __html: sanitizedInitialValue }}
         style={{
           userSelect: isReviewMode ? 'text' : 'auto',
           WebkitUserSelect: isReviewMode ? 'text' : 'auto'

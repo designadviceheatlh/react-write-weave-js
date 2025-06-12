@@ -1,16 +1,14 @@
 
+import { sanitizeHTML } from './htmlSanitizer';
+
 /**
- * This file has been refactored into smaller modules.
- * Import from './pasteHandler.js' instead for simple cleaning.
+ * Clean pasted HTML with security sanitization
  */
 export const cleanPastedHTML = (html) => {
-  // Simple HTML cleaning - remove scripts and dangerous elements
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
+  if (!html || typeof html !== 'string') {
+    return '';
+  }
   
-  // Remove script tags and other dangerous elements
-  const scripts = tempDiv.querySelectorAll('script, style, meta, link');
-  scripts.forEach(el => el.remove());
-  
-  return tempDiv.innerHTML;
+  // Use the secure sanitizer instead of manual cleaning
+  return sanitizeHTML(html);
 };

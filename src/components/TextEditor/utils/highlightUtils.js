@@ -1,3 +1,5 @@
+import { sanitizeHTML } from './htmlSanitizer';
+
 /**
  * Utility functions for text highlighting in review mode
  */
@@ -19,7 +21,7 @@ export const HIGHLIGHT_CLASSES = {
 };
 
 /**
- * Highlight selected text with specified color
+ * Highlight selected text with specified color (secure version)
  */
 export const highlightSelection = (color = 'yellow') => {
   const selection = window.getSelection();
@@ -35,11 +37,23 @@ export const highlightSelection = (color = 'yellow') => {
     return false;
   }
 
-  // Create mark element with highlight class
+  // Validate color parameter
+  if (!HIGHLIGHT_COLORS[color]) {
+    console.warn('Invalid highlight color:', color);
+    color = 'yellow';
+  }
+
+  // Create mark element with secure attributes
   const mark = document.createElement('mark');
   mark.className = `text-highlight ${HIGHLIGHT_CLASSES[color]}`;
   mark.setAttribute('data-highlight-color', color);
   mark.setAttribute('data-highlight-id', Date.now().toString());
+  
+  // Validate selected text content before highlighting
+  const sanitizedText = sanitizeHTML(selectedText);
+  if (sanitizedText !== selectedText) {
+    console.warn('Selected text contained unsafe content, sanitized before highlighting');
+  }
   
   try {
     range.surroundContents(mark);
