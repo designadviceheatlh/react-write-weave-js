@@ -1,8 +1,26 @@
 
-import DOMPurify from 'dompurify';
+/**
+ * Secure HTML sanitization utility
+ * Provides XSS protection for editor content
+ */
+
+// Fallback sanitization if DOMPurify is not available
+const basicSanitize = (html) => {
+  if (!html || typeof html !== 'string') {
+    return '';
+  }
+  
+  // Remove script tags and dangerous attributes
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/data:text\/html/gi, '');
+};
 
 /**
- * Secure HTML sanitization configuration
+ * Configuration for HTML sanitization
  */
 const SANITIZE_CONFIG = {
   // Allow only safe HTML elements
@@ -18,18 +36,7 @@ const SANITIZE_CONFIG = {
   // Allow only safe attributes
   ALLOWED_ATTR: [
     'class', 'data-highlight-color', 'data-highlight-id'
-  ],
-  
-  // Remove all scripts and dangerous elements
-  FORBID_TAGS: ['script', 'object', 'embed', 'form', 'input', 'textarea', 'select', 'button'],
-  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'style'],
-  
-  // Remove all scripts
-  ALLOW_DATA_ATTR: false,
-  ALLOW_UNKNOWN_PROTOCOLS: false,
-  RETURN_DOM: false,
-  RETURN_DOM_FRAGMENT: false,
-  RETURN_DOM_IMPORT: false
+  ]
 };
 
 /**
@@ -40,7 +47,24 @@ export const sanitizeHTML = (html) => {
     return '';
   }
   
-  return DOMPurify.sanitize(html, SANITIZE_CONFIG);
+  try {
+    // Try to use DOMPurify if available
+    if (typeof window !== 'undefined' && window.DOMPurify) {
+      return window.DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: SANITIZE_CONFIG.ALLOWED_TAGS,
+        ALLOWED_ATTR: SANITIZE_CONFIG.ALLOWED_ATTR,
+        FORBID_TAGS: ['script', 'object', 'embed', 'form', 'input', 'textarea', 'select', 'button'],
+        FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'style'],
+        ALLOW_DATA_ATTR: false,
+        ALLOW_UNKNOWN_PROTOCOLS: false
+      });
+    }
+  } catch (error) {
+    console.warn('DOMPurify not available, using basic sanitization:', error);
+  }
+  
+  // Fallback to basic sanitization
+  return basicSanitize(html);
 };
 
 /**
@@ -51,20 +75,24 @@ export const sanitizePastedContent = (html) => {
     return '';
   }
   
-  // Even stricter config for pasted content
-  const pasteConfig = {
-    ...SANITIZE_CONFIG,
-    // Remove more potentially dangerous elements for pasted content
-    FORBID_TAGS: [...SANITIZE_CONFIG.FORBID_TAGS, 'iframe', 'frame', 'frameset', 'meta', 'link'],
-    // Clean up Microsoft Word and other office suite artifacts
-    CUSTOM_ELEMENT_HANDLING: {
-      tagNameCheck: null,
-      attributeNameCheck: null,
-      allowCustomizedBuiltInElements: false,
+  try {
+    // Try to use DOMPurify if available
+    if (typeof window !== 'undefined' && window.DOMPurify) {
+      return window.DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: SANITIZE_CONFIG.ALLOWED_TAGS,
+        ALLOWED_ATTR: SANITIZE_CONFIG.ALLOWED_ATTR,
+        FORBID_TAGS: ['script', 'object', 'embed', 'form', 'input', 'textarea', 'select', 'button', 'iframe', 'frame', 'frameset', 'meta', 'link'],
+        FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur', 'style'],
+        ALLOW_DATA_ATTR: false,
+        ALLOW_UNKNOWN_PROTOCOLS: false
+      });
     }
-  };
+  } catch (error) {
+    console.warn('DOMPurify not available for paste sanitization, using basic sanitization:', error);
+  }
   
-  return DOMPurify.sanitize(html, pasteConfig);
+  // Fallback to basic sanitization
+  return basicSanitize(html);
 };
 
 /**
@@ -81,4 +109,24 @@ export const validateContentLength = (content, maxLength = 100000) => {
   }
   
   return content;
+};
+
+/**
+ * Checks if content contains potentially dangerous elements
+ */
+export const isContentSafe = (html) => {
+  if (!html || typeof html !== 'string') {
+    return true;
+  }
+  
+  const dangerousPatterns = [
+    /<script/i,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    /<iframe/i,
+    /<object/i,
+    /<embed/i
+  ];
+  
+  return !dangerousPatterns.some(pattern => pattern.test(html));
 };

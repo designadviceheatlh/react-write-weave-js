@@ -1,136 +1,83 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { handlePaste } from './utils/pasteHandler';
-import { handleUndo, handleRedo, handleListIndentation } from './utils/editorCommands';
-import { sanitizeHTML, validateContentLength } from './utils/htmlSanitizer';
 
-const EditorContent = ({
-  initialValue,
-  placeholder,
-  onChange,
-  isEmpty,
-  isFocused,
-  setIsFocused,
-  setIsEmpty,
-  isReviewMode
+import React, { useRef, useEffect } from 'react';
+import { sanitizeHTML } from './utils/htmlSanitizer';
+
+const EditorContent = ({ 
+  content = '', 
+  onChange, 
+  onSelectionChange, 
+  placeholder = 'Digite seu texto aqui...',
+  className = '',
+  readOnly = false 
 }) => {
-  const editorRef = useRef(null);
-  
-  // Sanitize initial value
-  const sanitizedInitialValue = sanitizeHTML(validateContentLength(initialValue || ''));
+  const contentRef = useRef(null);
 
-  // Preserve heading styles when creating lists
+  // Sanitize content before rendering
+  const sanitizedContent = sanitizeHTML(content);
+
   useEffect(() => {
-    if (editorRef.current) {
-      // Observe mutations to preserve styles when lists are created
-      const observer = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
-          if (mutation.type === 'childList') {
-            // Check for new list elements
-            mutation.addedNodes.forEach(node => {
-              if (node instanceof HTMLElement) {
-                if (node.nodeName === 'UL' || node.nodeName === 'OL') {
-                  // Get the parent element style
-                  const parentStyle = node.parentElement?.nodeName;
-                  if (parentStyle && ['H1', 'H2', 'H3'].includes(parentStyle)) {
-                    // Ensure list items inside headings maintain the heading style
-                    node.querySelectorAll('li').forEach(li => {
-                      li.style.fontWeight = window.getComputedStyle(node.parentElement).fontWeight;
-                      li.style.fontSize = window.getComputedStyle(node.parentElement).fontSize;
-                    });
-                  }
-                }
-              }
-            });
+    if (contentRef.current && !readOnly) {
+      // Set up event listeners for content changes
+      const handleInput = () => {
+        if (onChange) {
+          const newContent = contentRef.current.innerHTML;
+          onChange(sanitizeHTML(newContent));
+        }
+      };
+
+      const handleSelectionChange = () => {
+        if (onSelectionChange && document.activeElement === contentRef.current) {
+          const selection = window.getSelection();
+          if (selection && selection.rangeCount > 0) {
+            onSelectionChange(selection.getRangeAt(0));
           }
-        });
-      });
-      
-      // Start observing
-      observer.observe(editorRef.current, { 
-        childList: true, 
-        subtree: true 
-      });
-      
-      return () => observer.disconnect();
-    }
-  }, []);
+        }
+      };
 
-  // Handle keyboard shortcuts
-  const handleKeyDown = useCallback((e) => {
-    // Ctrl+Z for undo
-    if (e.ctrlKey && e.key === 'z') {
-      e.preventDefault();
-      handleUndo(onChange);
-    }
-    // Ctrl+Y or Ctrl+Shift+Z for redo
-    if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
-      e.preventDefault();
-      handleRedo(onChange);
-    }
-    
-    // Handle Tab key for list indentation
-    if (e.key === 'Tab') {
-      const isListIndented = handleListIndentation(e.shiftKey, onChange);
-      if (isListIndented) {
-        e.preventDefault(); // Prevent default tab behavior only if we handled a list indentation
-      }
-    }
-  }, [onChange]);
+      const element = contentRef.current;
+      element.addEventListener('input', handleInput);
+      document.addEventListener('selectionchange', handleSelectionChange);
 
-  const handleInput = () => {
-    if (isReviewMode) return; // Prevent input changes in review mode
-    
-    // Sanitize content on every input change
-    if (editorRef.current) {
-      const currentHTML = editorRef.current.innerHTML;
-      const sanitizedHTML = sanitizeHTML(currentHTML);
-      
-      // Only update if sanitization changed something (to avoid infinite loops)
-      if (currentHTML !== sanitizedHTML) {
-        editorRef.current.innerHTML = sanitizedHTML;
-      }
+      return () => {
+        element.removeEventListener('input', handleInput);
+        document.removeEventListener('selectionchange', handleSelectionChange);
+      };
     }
-    
-    onChange();
-    setIsEmpty(editorRef.current?.textContent === '');
-  };
+  }, [onChange, onSelectionChange, readOnly]);
 
-  const handlePasteEvent = (e) => {
-    if (isReviewMode) {
-      e.preventDefault(); // Prevent pasting in review mode
-      return;
+  // Safely render HTML content
+  const renderContent = () => {
+    if (readOnly) {
+      return (
+        <div
+          className={`editor-display ${className}`}
+          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+        />
+      );
     }
-    handlePaste(e, onChange);
-  };
 
-  return (
-    <div className={`relative min-h-[150px] ${isReviewMode ? 'bg-orange-50/30' : ''}`}>
-      {isEmpty && !isFocused && (
-        <div className="absolute top-0 left-0 p-3 text-gray-400 pointer-events-none font-sans">
-          {isReviewMode ? 'Selecione texto para grifar...' : placeholder}
-        </div>
-      )}
+    return (
       <div
-        className={`p-3 min-h-[150px] focus:outline-none prose prose-sm max-w-none w-full font-sans text-[14px] font-normal leading-normal ${
-          isReviewMode ? 'cursor-text select-text' : ''
-        }`}
-        ref={editorRef}
-        contentEditable={!isReviewMode}
-        onInput={handleInput}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        onPaste={handlePasteEvent}
-        onKeyDown={handleKeyDown}
-        data-testid="text-editor"
-        data-review-mode={isReviewMode}
-        dangerouslySetInnerHTML={{ __html: sanitizedInitialValue }}
+        ref={contentRef}
+        contentEditable={!readOnly}
+        suppressContentEditableWarning={true}
+        className={`editor-content ${className}`}
+        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+        data-placeholder={placeholder}
         style={{
-          userSelect: isReviewMode ? 'text' : 'auto',
-          WebkitUserSelect: isReviewMode ? 'text' : 'auto'
+          minHeight: '200px',
+          padding: '12px',
+          border: '1px solid #e5e5e5',
+          borderRadius: '4px',
+          outline: 'none',
+          fontSize: '14px',
+          lineHeight: '1.5'
         }}
       />
-    </div>
-  );
+    );
+  };
+
+  return renderContent();
 };
 
 export default EditorContent;
