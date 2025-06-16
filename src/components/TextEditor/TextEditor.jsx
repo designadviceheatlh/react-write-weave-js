@@ -4,7 +4,6 @@ import ReviewToolbar from './ReviewToolbar';
 import EditorContent from './EditorContent';
 import { cn } from '../../lib/utils';
 import { executeCommand } from './utils/editorCommands';
-import { Textarea } from '../ui/textarea';
 import { toast } from '../ui/use-toast';
 import { Check, Save, Eye, Edit } from 'lucide-react';
 import { getAllHighlights } from './utils/highlightUtils';
@@ -25,25 +24,27 @@ const TextEditor = ({
   
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
-  const [notes, setNotes] = useState('');
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [originalContent, setOriginalContent] = useState(initialValue);
 
   // Autosave timer ref
   const saveTimerRef = useRef(null);
-  const handleChange = useCallback(() => {
-    if (!editorRef.current || !onChange) return;
+  
+  const handleChange = useCallback((html) => {
+    if (!onChange) return;
     
-    const content = editorRef.current.textContent || '';
-    let html = editorRef.current.innerHTML;
+    // Extract text content for validation
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    const content = tempDiv.textContent || tempDiv.innerText || '';
     
     // Sanitize HTML content before processing
-    html = sanitizeHTML(html);
+    const sanitizedHTML = sanitizeHTML(html);
     const validatedContent = validateContentLength(content);
-    const validatedHTML = validateContentLength(html);
+    const validatedHTML = validateContentLength(sanitizedHTML);
 
     // Check if editor is empty to show/hide placeholder
-    setIsEmpty(validatedContent === '');
+    setIsEmpty(validatedContent.trim() === '');
     
     onChange({
       content: validatedContent,
@@ -110,6 +111,7 @@ const TextEditor = ({
       duration: 2000
     });
   };
+
   const handleHighlightChange = useCallback(() => {
     // Update highlight count or any other review mode specific logic
     if (editorRef.current) {
@@ -117,14 +119,8 @@ const TextEditor = ({
       console.log(`Total highlights: ${highlights.length}`);
     }
   }, []);
-  useEffect(() => {
-    // Store a reference to the editor element for commands
-    window.setTimeout(() => {
-      if (document.querySelector('[data-testid="text-editor"]')) {
-        editorRef.current = document.querySelector('[data-testid="text-editor"]');
-      }
-    }, 0);
 
+  useEffect(() => {
     // Clean up autosave timer on unmount
     return () => {
       if (saveTimerRef.current) {
@@ -132,9 +128,7 @@ const TextEditor = ({
       }
     };
   }, []);
-  const handleNotesChange = e => {
-    setNotes(e.target.value);
-  };
+
   return (
     <div className={cn("flex flex-col border rounded-md overflow-hidden relative", className)}>
       {/* Mode toggle button */}
@@ -164,6 +158,7 @@ const TextEditor = ({
       )}
       
       <EditorContent 
+        ref={editorRef}
         initialValue={sanitizedInitialValue} 
         placeholder={placeholder} 
         onChange={handleChange} 
@@ -173,10 +168,6 @@ const TextEditor = ({
         setIsEmpty={setIsEmpty} 
         isReviewMode={isReviewMode} 
       />
-      
-      <div className="mt-4">
-        
-      </div>
       
       {/* Save indicator - hidden in review mode */}
       {!isReviewMode && (
